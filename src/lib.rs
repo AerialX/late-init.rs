@@ -27,18 +27,21 @@ impl<T: fmt::Debug> fmt::Debug for LateInitUnchecked<T> {
 }
 
 impl<T> LateInitUnchecked<T> {
+    #[inline]
     pub const fn new() -> Self {
         Self {
             inner: UnsafeCell::new(MaybeUninit::uninit()),
         }
     }
 
+    #[inline]
     pub const fn with(value: T) -> Self {
         Self {
             inner: UnsafeCell::new(MaybeUninit::new(value)),
         }
     }
 
+    #[inline]
     pub fn late_init_mut(&mut self, value: T) {
         unsafe {
             self.late_init(value)
@@ -46,34 +49,41 @@ impl<T> LateInitUnchecked<T> {
     }
 
     /// Repeated initializations will leak previous values without dropping them.
+    #[inline(always)]
     pub unsafe fn late_init(&self, value: T) {
-        *self.inner.get() = MaybeUninit::new(value);
+        //*self.inner.get() = MaybeUninit::new(value);
+        ptr::write((*self.inner.get()).as_mut_ptr(), value);
     }
 
+    #[inline]
     pub fn late_ptr(&self) -> *const T {
         unsafe {
             (*self.inner.get()).as_ptr()
         }
     }
 
+    #[inline]
     pub fn late_ptr_mut(&self) -> *mut T {
         unsafe {
             (*self.inner.get()).as_mut_ptr()
         }
     }
 
+    #[inline]
     pub fn late_get_ref(&self) -> &T {
         unsafe {
             &*self.late_ptr()
         }
     }
 
+    #[inline]
     pub fn late_get_mut(&mut self) -> &mut T {
         unsafe {
             &mut *self.late_ptr_mut()
         }
     }
 
+    #[inline]
     pub unsafe fn late_get_mut_unchecked(&self) -> &mut T {
         &mut *self.late_ptr_mut()
     }
@@ -82,12 +92,14 @@ impl<T> LateInitUnchecked<T> {
 impl<T> Deref for LateInitUnchecked<T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         self.late_get_ref()
     }
 }
 
 impl<T> DerefMut for LateInitUnchecked<T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.late_get_mut()
     }
@@ -118,18 +130,21 @@ impl<T: fmt::Debug> fmt::Debug for LateInit<T> {
 }
 
 impl<T> LateInit<T> {
+    #[inline]
     pub const fn new() -> Self {
         Self {
             inner: UnsafeCell::new(None),
         }
     }
 
+    #[inline]
     pub const fn with(value: T) -> Self {
         Self {
             inner: UnsafeCell::new(Some(value)),
         }
     }
 
+    #[inline]
     pub fn late_init_mut(&mut self, value: T) {
         unsafe {
             self.late_init(value)
@@ -142,10 +157,12 @@ impl<T> LateInit<T> {
         *inner = Some(value);
     }
 
+    #[inline]
     unsafe fn late_inner_mut(&self) -> &mut Option<T> {
         &mut *self.inner.get()
     }
 
+    #[inline]
     fn late_inner(&self) -> &Option<T> {
         unsafe {
             &*self.inner.get()
@@ -165,14 +182,17 @@ impl<T> LateInit<T> {
         self.late_inner().as_ref().map(|inner| inner as *const _).unwrap_or(ptr::null())
     }
 
+    #[inline]
     pub fn late_ptr_mut(&self) -> *mut T {
         self.late_ptr() as *mut _
     }
 
+    #[inline]
     pub fn late_try_get_ref(&self) -> Option<&T> {
         self.late_inner().as_ref()
     }
 
+    #[inline]
     pub fn late_try_get_mut(&mut self) -> Option<&mut T> {
         unsafe {
             self.late_inner_mut().as_mut()
@@ -204,12 +224,14 @@ impl<T> LateInit<T> {
 impl<T> Deref for LateInit<T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         self.late_get_ref()
     }
 }
 
 impl<T> DerefMut for LateInit<T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.late_get_mut()
     }
