@@ -50,9 +50,9 @@ impl<T> LateInitUnchecked<T> {
 
     /// Repeated initializations will leak previous values without dropping them.
     #[inline(always)]
-    pub unsafe fn late_init(&self, value: T) {
+    pub unsafe fn late_init<I: Into<T>>(&self, value: I) {
         //*self.inner.get() = MaybeUninit::new(value);
-        ptr::write((*self.inner.get()).as_mut_ptr(), value);
+        ptr::write((*self.inner.get()).as_mut_ptr(), value.into());
     }
 
     #[inline]
@@ -151,10 +151,11 @@ impl<T> LateInit<T> {
         }
     }
 
-    pub unsafe fn late_init(&self, value: T) {
+    #[inline]
+    pub unsafe fn late_init<I: Into<T>>(&self, value: I) {
         let inner = self.late_inner_mut();
         debug_assert!(inner.is_none());
-        *inner = Some(value);
+        *inner = Some(value.into());
     }
 
     #[inline]
